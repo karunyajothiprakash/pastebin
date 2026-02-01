@@ -1,21 +1,26 @@
-import { NextResponse } from "next/server";
-import { redis } from "@/app/lib/redis";
+import { notFound } from "next/navigation";
 
-export async function GET(
-  req: Request,
-  context: { params: { id: string } }
-) {
-  const { id } = context.params;
+type PageProps = {
+  params: {
+    id: string;
+  };
+};
 
-  const key = `paste:${id}`;
-  const raw = await redis.get(key);
+export default async function Page({ params }: PageProps) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/pastes/${params.id}`,
+    { cache: "no-store" }
+  );
 
-  if (!raw) {
-    return NextResponse.json(
-      { error: "Paste not found" },
-      { status: 404 }
-    );
+  if (!res.ok) {
+    notFound();
   }
 
-  return NextResponse.json({ content: raw });
+  const data = await res.json();
+
+  return (
+    <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+      {data.content}
+    </pre>
+  );
 }
